@@ -47,13 +47,13 @@ export async function getRelatedCode(
   relatedCodeDefinitions.forEach((def) => {
     definitionKeys[def.definitionLoc] = true;
   });
-  logger.info(
+  logger?.info(
     `Start declaration: ${_declaration.getStart()} ${_declaration.getEnd()} ${_declaration.getSourceFile().getFilePath()}\n${_declaration.getFullText()}`
   );
   try {
     _declaration.getDescendantsOfKind(ts.SyntaxKind.Identifier);
   } catch (e) {
-    logger.info(e, "ts-morph bug 1");
+    logger?.info(e, "ts-morph bug 1");
     return [];
   }
 
@@ -62,12 +62,12 @@ export async function getRelatedCode(
     .map((identifier) => {
       try {
         const identifierName = identifier.getText();
-        logger.info(
+        logger?.info(
           `Identifier: ${identifierName} ${identifier.getSourceFile().getFilePath()}#${identifier.getFullStart()}`
         );
         const parentKindName = identifier.getParent().getKindName();
         if (parentKindName.substring(0, 3) === "Jsx") {
-          logger.info(`Skipping JSX/TSX node: ${identifierName}`);
+          logger?.info(`Skipping JSX/TSX node: ${identifierName}`);
           return undefined;
         }
         const definitions = identifier
@@ -77,12 +77,12 @@ export async function getRelatedCode(
             const definitionNode = definition.getNode();
             const definitionNodeKindName = definitionNode.getKindName(); // Identifier
             // if (definition.getContainerName() === "__type") {
-            //   logger.info("Skipping __type definition");
+            //   logger?.info("Skipping __type definition");
             //   return undefined;
             // }
             const declarationNode = definition.getDeclarationNode();
             if (!definitionNode) {
-              logger.info("No definitionNode");
+              logger?.info("No definitionNode");
               return undefined;
             }
             if (
@@ -91,7 +91,7 @@ export async function getRelatedCode(
                 .getFilePath()
                 .startsWith("/node_modules/typescript/lib/lib.")
             ) {
-              logger.info("Internal TS declaration");
+              logger?.info("Internal TS declaration");
               return;
             }
 
@@ -119,21 +119,21 @@ export async function getRelatedCode(
               start < _declaration.getEnd() &&
               filePath === _declaration.getSourceFile().getFilePath()
             ) {
-              logger.info(`Skipping internal reference: ${identifierName}`);
+              logger?.info(`Skipping internal reference: ${identifierName}`);
               return undefined;
             }
 
             const codeLoc = `${filePath}#${start}`;
 
             if (codeLoc in definitionKeys) {
-              logger.info(
+              logger?.info(
                 `Skipping already added definition: ${identifierName}`
               );
               return undefined;
             }
             definitionKeys[codeLoc] = true;
 
-            logger.info(`codeNode ${codeLoc} \n${code.substring(0, 50)}`);
+            logger?.info(`codeNode ${codeLoc} \n${code.substring(0, 50)}`);
 
             const definitionIsExternal = filePath.includes("node_modules");
 
@@ -157,7 +157,7 @@ export async function getRelatedCode(
                 .getDescendantsOfKind(ts.SyntaxKind.Identifier)?.[0]
                 ?.getText();
             } catch (e) {
-              logger.info(e, "ts-morph bug 3");
+              logger?.info(e, "ts-morph bug 3");
               // Fall back to the identifierName in the referencing code
               definitionIdentifier = identifierName;
             }
@@ -210,8 +210,8 @@ export async function getRelatedCode(
           },
         };
       } catch (e) {
-        logger.info(e, "ts-morph bug 2");
-        logger.info(identifier.getSourceFile().getFilePath());
+        logger?.info(e, "ts-morph bug 2");
+        logger?.info(identifier.getSourceFile().getFilePath());
         return undefined;
       }
     })

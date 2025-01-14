@@ -127,30 +127,31 @@ export async function getRelatedCodeHandler(p: GetRelatedCode) {
     details: undefined,
   }));
 
-  if (debug) {
-    await writeJsonFile(
-      path.join(debugPath, "relatedCode-full.json"),
-      relatedCodeDefinitions
-    );
-    await writeJsonFile(
-      path.join(debugPath, "relatedCode.json"),
-      relatedCodeDefinitions2
-    );
-    // await writeJsonFile(path.join(debugPath, "references.json"), references);
+  // if (debug) {
+  await writeJsonFile(
+    path.join(debugPath, "relatedCode-full.json"),
+    relatedCodeDefinitions
+  );
+  await writeJsonFile(
+    path.join(debugPath, "relatedCode.json"),
+    relatedCodeDefinitions2
+  );
+  // await writeJsonFile(path.join(debugPath, "references.json"), references);
 
-    await writeFile(
-      path.join(debugPath, "relatedcode.md"),
-      relatedCodeDefinitions
-        .map(
-          (d) =>
-            "```ts\n" +
-            `// ${d.addedOnRecursionLevel} - ${d.definitionIdentifier} - ${d.definitionLoc}\n` +
-            d.code.trim() +
-            "\n```\n"
-        )
-        .join("")
-    );
-  }
+  await writeFile(
+    path.join(debugPath, "relatedcode.md"),
+    relatedCodeDefinitions
+      .map(
+        (d) =>
+          "```ts\n" +
+          `// ${d.addedOnRecursionLevel} - ${d.definitionIdentifier} - ${d.definitionLoc}\n` +
+          d.code.trim() +
+          "\n```\n"
+      )
+      .join("")
+  );
+  // }
 
-  logger.info("DONE");
+  logger?.info("DONE");
+  console.log("DONE");
 }

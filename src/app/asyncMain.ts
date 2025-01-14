@@ -6,6 +6,8 @@ import { getRelatedCodeHandler } from "./messageHandlers/getRelatedCodeHandler";
 import { ServerState } from "./ServerState";
 import { getLoggerAndSetupDebug } from "./utils/getLoggerAndSetupDebug";
 
+const __dirname = import.meta.dirname;
+
 export async function asyncMain() {
   const usage = `
 Examples
@@ -22,7 +24,7 @@ Examples
       },
       debug: {
         type: "boolean",
-        default: true,
+        default: false,
       },
       declarationNames: {
         type: "string",
@@ -48,15 +50,16 @@ Examples
     console.error("invalid projectPath");
   }
 
-  const debugPath = path.join(projectPath, "debug");
+  // const debugPath = path.join(projectPath, "debug");
+  const debugPath = path.join(__dirname, "..", "..", "debug");
   const logger = await getLoggerAndSetupDebug(debug, debugPath);
 
-  if (debug) {
-    if (existsSync(debugPath)) {
-      await rm(debugPath, { recursive: true });
-    }
-    await mkdir(debugPath);
+  // if (debug) {
+  if (existsSync(debugPath)) {
+    await rm(debugPath, { recursive: true });
   }
+  await mkdir(debugPath);
+  // }
 
   const serverState: ServerState = {
     logger,
