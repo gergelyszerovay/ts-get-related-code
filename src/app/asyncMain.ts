@@ -1,7 +1,7 @@
 import meow from "meow";
 import { existsSync } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
-import path from "node:path";
+import path, { dirname } from "node:path";
 import { getRelatedCodeHandler } from "./messageHandlers/getRelatedCodeHandler";
 import { ServerState } from "./ServerState";
 import { getLoggerAndSetupDebug } from "./utils/getLoggerAndSetupDebug";
@@ -9,14 +9,14 @@ import { getLoggerAndSetupDebug } from "./utils/getLoggerAndSetupDebug";
 export async function asyncMain() {
   const usage = `
 Examples
-  $ cli --projectDir=./ --debug=true
+  $ cli --projectTsConfig=../project/tsconfig.json --debug=true
 `;
 
   const cli = meow(usage, {
     importMeta: import.meta, // This is required
     flags: {
       // server
-      projectDir: {
+      projectTsConfig: {
         type: "string",
         isRequired: true,
       },
@@ -24,16 +24,24 @@ Examples
         type: "boolean",
         default: true,
       },
-      declarationName: {
+      declarationNames: {
         type: "string",
         isRequired: true,
+      },
+      ignoreExternalDeclarations: {
+        type: "boolean",
+        default: true,
+      },
+      maxRecursionLevel: {
+        type: "number",
+        default: 0,
       },
     },
   });
 
-  const { debug, projectDir, declarationName } = cli.flags;
+  const { debug, projectTsConfig, declarationNames } = cli.flags;
 
-  const projectPath = path.resolve(projectDir);
+  const projectPath = path.resolve(dirname(projectTsConfig));
 
   if (!existsSync(projectPath)) {
     // TODO
@@ -54,7 +62,10 @@ Examples
     logger,
     projectPath,
     debugPath,
-    cliParamas: cli.flags,
+    cliParamas: {
+      ...cli.flags,
+      declarationNames: declarationNames.split(","),
+    },
   };
 
   logger?.info({ ...serverState, logger: "REMOVED" }, "serverState");
@@ -62,6 +73,6 @@ Examples
   getRelatedCodeHandler({
     _event: "getRelatedCode",
     _serverState: serverState,
-    declarationName,
+    declarationNames: declarationNames.split(","),
   });
 }

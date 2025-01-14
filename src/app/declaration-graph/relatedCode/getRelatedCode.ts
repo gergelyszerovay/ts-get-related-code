@@ -26,6 +26,7 @@ export async function getRelatedCode(
     | VariableDeclaration
     | Node,
   codeSizeLimit: number,
+  ignoreExternalDeclarations: boolean,
   recursionLevel: number,
   relatedCodeDefinitions: RelatedCodeDefinition[],
   parentDefinitionIdentifiers: string,
@@ -135,6 +136,10 @@ export async function getRelatedCode(
             logger.info(`codeNode ${codeLoc} \n${code.substring(0, 50)}`);
 
             const definitionIsExternal = filePath.includes("node_modules");
+
+            if (ignoreExternalDeclarations && definitionIsExternal) {
+              return undefined;
+            }
 
             let definitionsPackage: string | undefined = undefined;
 

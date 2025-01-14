@@ -1,5 +1,7 @@
 export type CliParams = {
-  projectDir: string;
+  projectTsConfig: string;
   debug: boolean;
-  declarationName: string;
+  declarationNames: ReadonlyArray<string>;
+  ignoreExternalDeclarations: boolean;
+  maxRecursionLevel: number;
 };

@@ -5,5 +5,5 @@ export type GetRelatedCode = {
   _event: "getRelatedCode";
   _apiKey?: Record<string, string>;
   _serverState?: ServerState;
-  declarationName: string;
+  declarationNames: ReadonlyArray<string>;
 };

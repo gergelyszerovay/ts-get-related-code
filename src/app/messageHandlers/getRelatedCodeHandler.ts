@@ -1,79 +1,125 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getReferences } from "../declaration-graph/analyze/getReferences";
-import { getSrcFilesDetails } from "../declaration-graph/getSrcFilesDetails";
+import {
+  ClassDeclaration,
+  EnumDeclaration,
+  FunctionDeclaration,
+  InterfaceDeclaration,
+  Project,
+  TypeAliasDeclaration,
+  VariableDeclaration,
+} from "ts-morph";
 import { getRelatedCode } from "../declaration-graph/relatedCode/getRelatedCode";
+import { RelatedCodeDefinition } from "../declaration-graph/relatedCode/RelatedCodeDefinition";
 import { GetRelatedCode } from "../messageTypes/GetRelatedCode";
 import { writeJsonFile } from "../utils/writeJsonFile";
 
 export async function getRelatedCodeHandler(p: GetRelatedCode) {
   const { _serverState } = p;
   const { logger, projectPath, debugPath, cliParamas } = _serverState;
-  const { debug } = cliParamas;
+  const {
+    debug,
+    projectTsConfig,
+    ignoreExternalDeclarations,
+    maxRecursionLevel,
+  } = cliParamas;
 
-  // process.chdir(projectPath);
+  const project = new Project({
+    tsConfigFilePath: projectTsConfig,
+  });
 
-  const { srcFilesDetails } = await getSrcFilesDetails(
-    { debug },
-    { logger, projectPath, debugPath }
-  );
+  let relatedCodeDefinitions: RelatedCodeDefinition[] = [];
 
-  const allDeclarations = srcFilesDetails
-    .map((detail) => detail.declarations)
-    .flat();
+  for (const declarationName of p.declarationNames) {
+    const sourceFiles = project.getSourceFiles();
 
-  const declaration = allDeclarations.find((d) => d.name === p.declarationName);
-  if (!declaration) {
-    throw new Error("TODO");
-  }
+    for (const sourceFile of sourceFiles) {
+      let declaration:
+        | ClassDeclaration
+        | TypeAliasDeclaration
+        | InterfaceDeclaration
+        | EnumDeclaration
+        | FunctionDeclaration
+        | VariableDeclaration =
+        sourceFile.getClass(declarationName) ||
+        sourceFile.getFunction(declarationName) ||
+        sourceFile.getEnum(declarationName) ||
+        sourceFile.getTypeAlias(declarationName) ||
+        sourceFile.getInterface(declarationName);
+      if (!declaration) {
+        const variableStatements = sourceFile.getVariableStatements();
+        for (const variableStatement of variableStatements) {
+          const variableDeclarations = variableStatement.getDeclarations();
 
-  const references = getReferences(declaration._declaration);
-
-  let relatedCodeDefinitions = await getRelatedCode(
-    declaration._declaration,
-    500,
-    0,
-    [],
-    p.declarationName,
-    declaration._declaration.getSourceFile().getFilePath() +
-      "#" +
-      declaration._declaration.getSourceFile().getFullStart(),
-    {
-      logger,
-      projectPath,
-      debugPath,
-      debug,
-    }
-  );
-
-  for (let recursionLevel = 1; recursionLevel <= 2; recursionLevel++) {
-    for (let d1 of relatedCodeDefinitions) {
-      if (
-        d1.definitionIsExternal ||
-        !d1._definitionCodeNode ||
-        d1.addedOnRecursionLevel !== recursionLevel - 1
-      ) {
-        continue;
-      }
-      relatedCodeDefinitions = [
-        ...relatedCodeDefinitions,
-        ...(await getRelatedCode(
-          d1._definitionCodeNode,
-          500,
-          recursionLevel,
-          relatedCodeDefinitions,
-          d1.parentDefinitionIdentifiers + "/" + d1.definitionIdentifier,
-          d1.parentDefinitionLoc,
-          {
-            logger,
-            projectPath,
-            debugPath,
-            debug,
+          for (const variableDeclaration of variableDeclarations) {
+            if (variableDeclaration.getName() === declarationName) {
+              declaration = variableDeclaration;
+            }
           }
-        )),
-      ];
+        }
+      }
+      if (declaration) {
+        relatedCodeDefinitions = [
+          ...relatedCodeDefinitions,
+          ...(await getRelatedCode(
+            declaration,
+            5000,
+            ignoreExternalDeclarations,
+            0,
+            [],
+            declarationName,
+            declaration.getSourceFile().getFilePath() +
+              "#" +
+              declaration.getSourceFile().getFullStart(),
+            {
+              logger,
+              projectPath,
+              debugPath,
+              debug,
+            }
+          )),
+        ];
+
+        for (
+          let recursionLevel = 1;
+          recursionLevel <= maxRecursionLevel;
+          recursionLevel++
+        ) {
+          for (let d1 of relatedCodeDefinitions) {
+            if (
+              d1.definitionIsExternal ||
+              !d1._definitionCodeNode ||
+              d1.addedOnRecursionLevel !== recursionLevel - 1
+            ) {
+              continue;
+            }
+            relatedCodeDefinitions = [
+              ...relatedCodeDefinitions,
+              ...(await getRelatedCode(
+                d1._definitionCodeNode,
+                5000,
+                ignoreExternalDeclarations,
+                recursionLevel,
+                relatedCodeDefinitions,
+                d1.parentDefinitionIdentifiers + "/" + d1.definitionIdentifier,
+                d1.parentDefinitionLoc,
+                {
+                  logger,
+                  projectPath,
+                  debugPath,
+                  debug,
+                }
+              )),
+            ];
+          }
+        }
+      }
     }
+
+    // srcProject.getC;
   }
+
+  // const references = getReferences(declaration._declaration);
 
   const relatedCodeDefinitions2 = relatedCodeDefinitions.map((d) => ({
     ...d,
@@ -90,13 +136,21 @@ export async function getRelatedCodeHandler(p: GetRelatedCode) {
       path.join(debugPath, "relatedCode.json"),
       relatedCodeDefinitions2
     );
-    await writeJsonFile(path.join(debugPath, "references.json"), references);
+    // await writeJsonFile(path.join(debugPath, "references.json"), references);
 
     await writeFile(
       path.join(debugPath, "relatedcode.md"),
-      "```ts\n" +
-        relatedCodeDefinitions.map((d) => d.code).join("\n") +
-        "\n```\n"
+      relatedCodeDefinitions
+        .map(
+          (d) =>
+            "```ts\n" +
+            `// ${d.addedOnRecursionLevel} - ${d.definitionIdentifier} - ${d.definitionLoc}\n` +
+            d.code.trim() +
+            "\n```\n"
+        )
+        .join("")
     );
   }
+
+  logger.info("DONE");
 }

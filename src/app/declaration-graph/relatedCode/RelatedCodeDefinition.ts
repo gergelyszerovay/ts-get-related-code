@@ -30,7 +30,7 @@ export type RelatedCodeDefinition = {
       _definitionCodeNode?: Node;
       // declarationAncestorsCode: string[];
       definitionAncestorsCode: string[];
-      debug: unknown | undefined;
+      debug?: unknown;
     }[];
     parentKindName: string;
   };

@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "start": "pnpm exec tsx watch --tsconfig=./tsconfig.json ./src/main.ts --project-dir=../projects/1 --declarationName=useTicTacToeGameStore | pnpm exec pino-pretty"
+    "start": "pnpm exec tsx watch --tsconfig=./tsconfig.json ./src/main.ts --projectTsConfig=../projects/1/tsconfig.app.json --declarationNames=useTicTacToeGameStore  --maxRecursionLevel=2 | pnpm exec pino-pretty",
+    "start2": "pnpm exec tsx watch --tsconfig=./tsconfig.json ./src/main.ts --projectTsConfig=../projects/1/tsconfig.app.json --declarationNames=Board,Player --ignoreExternalDeclarations=false | pnpm exec pino-pretty"
   },
   "dependencies": {
     "@langchain/core": "^0.2.28",
