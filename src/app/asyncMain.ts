@@ -87,4 +87,7 @@ Examples
     codeSizeLimit: cli.flags.codeSizeLimit,
     externalCodeSizeLimit: cli.flags.externalCodeSizeLimit,
   });
+
+  logger?.info("done");
+  console.log("done");
 }
