@@ -13,6 +13,16 @@ import {
 } from "ts-morph";
 import { getSymbolFlagNames } from "./getSymbolFlagNames";
 
+type GetRelatedCodeParams = {
+  codeSizeLimit: number;
+  externalCodeSizeLimit: number;
+  ignoreExternalDeclarations: boolean;
+  recursionLevel: number;
+  relatedCodeDefinitions: RelatedCodeDefinition[];
+  parentDefinitionIdentifiers: string;
+  parentDefinitionLoc: string;
+};
+
 export async function getRelatedCode(
   _declaration:
     | ClassDeclaration
@@ -22,12 +32,7 @@ export async function getRelatedCode(
     | FunctionDeclaration
     | VariableDeclaration
     | Node,
-  codeSizeLimit: number,
-  ignoreExternalDeclarations: boolean,
-  recursionLevel: number,
-  relatedCodeDefinitions: RelatedCodeDefinition[],
-  parentDefinitionIdentifiers: string,
-  parentDefinitionLoc: string,
+  p: GetRelatedCodeParams,
   {
     logger,
     projectPath,
@@ -41,7 +46,7 @@ export async function getRelatedCode(
   }
 ): Promise<RelatedCodeDefinition[]> {
   const definitionKeys: Record<string, unknown> = {};
-  relatedCodeDefinitions.forEach((def) => {
+  p.relatedCodeDefinitions.forEach((def) => {
     definitionKeys[def.definitionLoc] = true;
   });
   logger?.info(
@@ -107,8 +112,15 @@ export async function getRelatedCode(
 
             let codeNode = definitionAncestors[definitionAncestors.length - 2];
 
-            const code = codeNode.getFullText().substring(0, codeSizeLimit);
             const filePath = codeNode.getSourceFile().getFilePath();
+            const definitionIsExternal = filePath.includes("node_modules");
+            const codeSizeLimit = definitionIsExternal
+              ? p.externalCodeSizeLimit
+              : p.codeSizeLimit;
+            let code = codeNode.getFullText();
+            if (codeSizeLimit) {
+              code = code.substring(0, codeSizeLimit);
+            }
             const start = codeNode.getFullStart();
 
             if (
@@ -132,9 +144,7 @@ export async function getRelatedCode(
 
             logger?.info(`codeNode ${codeLoc} \n${code.substring(0, 50)}`);
 
-            const definitionIsExternal = filePath.includes("node_modules");
-
-            if (ignoreExternalDeclarations && definitionIsExternal) {
+            if (p.ignoreExternalDeclarations && definitionIsExternal) {
               return undefined;
             }
 
@@ -194,9 +204,9 @@ export async function getRelatedCode(
           definitionIsExternal: firstDefinition.definitionIsExternal,
           definitionsPackage: firstDefinition.definitionsPackage,
           _definitionCodeNode: firstDefinition._definitionCodeNode,
-          addedOnRecursionLevel: recursionLevel,
-          parentDefinitionIdentifiers,
-          parentDefinitionLoc,
+          addedOnRecursionLevel: p.recursionLevel,
+          parentDefinitionIdentifiers: p.parentDefinitionIdentifiers,
+          parentDefinitionLoc: p.parentDefinitionLoc,
           details: {
             identifierSymbolFlags:
               identifier.getSymbol() &&

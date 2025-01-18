@@ -6,4 +6,8 @@ export type GetRelatedCode = {
   _apiKey?: Record<string, string>;
   _serverState?: ServerState;
   declarationIds: ReadonlyArray<string>;
+  codeSizeLimit: number;
+  externalCodeSizeLimit: number;
+  ignoreExternalDeclarations: boolean;
+  maxRecursionLevel: number;
 };

@@ -15,14 +15,15 @@ import { getRelatedCode } from "../declaration-graph/relatedCode/getRelatedCode"
 import { writeJsonFile } from "../utils/writeJsonFile";
 
 export async function getRelatedCodeHandler(p: GetRelatedCode) {
-  const { _serverState } = p;
-  const { logger, projectPath, debugPath, cliParamas } = _serverState;
   const {
-    debug,
-    projectTsConfig,
+    _serverState,
+    externalCodeSizeLimit,
+    codeSizeLimit,
     ignoreExternalDeclarations,
     maxRecursionLevel,
-  } = cliParamas;
+  } = p;
+  const { logger, projectPath, debugPath, cliParamas } = _serverState;
+  const { debugToConsole: debug, projectTsConfig } = cliParamas;
 
   const project = new Project({
     tsConfigFilePath: projectTsConfig,
@@ -75,14 +76,18 @@ export async function getRelatedCodeHandler(p: GetRelatedCode) {
           ...relatedCodeDefinitions,
           ...(await getRelatedCode(
             declaration,
-            5000,
-            ignoreExternalDeclarations,
-            0,
-            [],
-            declarationName,
-            declaration.getSourceFile().getFilePath() +
-              "#" +
-              declaration.getSourceFile().getFullStart(),
+            {
+              codeSizeLimit,
+              externalCodeSizeLimit,
+              ignoreExternalDeclarations,
+              recursionLevel: 0,
+              relatedCodeDefinitions: [],
+              parentDefinitionIdentifiers: declarationName,
+              parentDefinitionLoc:
+                declaration.getSourceFile().getFilePath() +
+                "#" +
+                declaration.getSourceFile().getFullStart(),
+            },
             {
               logger,
               projectPath,
@@ -109,12 +114,18 @@ export async function getRelatedCodeHandler(p: GetRelatedCode) {
               ...relatedCodeDefinitions,
               ...(await getRelatedCode(
                 d1._definitionCodeNode,
-                5000,
-                ignoreExternalDeclarations,
-                recursionLevel,
-                relatedCodeDefinitions,
-                d1.parentDefinitionIdentifiers + "/" + d1.definitionIdentifier,
-                d1.parentDefinitionLoc,
+                {
+                  codeSizeLimit,
+                  externalCodeSizeLimit,
+                  ignoreExternalDeclarations,
+                  recursionLevel,
+                  relatedCodeDefinitions,
+                  parentDefinitionIdentifiers:
+                    d1.parentDefinitionIdentifiers +
+                    "/" +
+                    d1.definitionIdentifier,
+                  parentDefinitionLoc: d1.parentDefinitionLoc,
+                },
                 {
                   logger,
                   projectPath,
@@ -164,6 +175,11 @@ export async function getRelatedCodeHandler(p: GetRelatedCode) {
   );
   // }
 
-  logger?.info("DONE");
-  console.log("DONE");
+  // sendMessage({
+  //   _event: "getRelatedCodeResult",
+  //   relatedCodeDefinitions: relatedCodeDefinitions2,
+  //   relatedCodeDefinitionNames: relatedCodeDefinitions.map(
+  //     (d) => d.definitionIdentifier
+  //   ),
+  // });
 }

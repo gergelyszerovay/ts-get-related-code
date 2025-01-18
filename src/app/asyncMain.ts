@@ -1,9 +1,9 @@
+import { ServerState } from "@shared/server";
 import meow from "meow";
 import { existsSync } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
 import path, { dirname } from "node:path";
 import { getRelatedCodeHandler } from "./messageHandlers/getRelatedCodeHandler";
-import { ServerState } from "./ServerState";
 import { getLoggerAndSetupDebug } from "./utils/getLoggerAndSetupDebug";
 
 const __dirname = import.meta.dirname;
@@ -11,18 +11,17 @@ const __dirname = import.meta.dirname;
 export async function asyncMain() {
   const usage = `
 Examples
-  $ cli --projectTsConfig=../project/tsconfig.json --debug=true
+  $ cli --projectTsConfig=../project/tsconfig.json --debug=file
 `;
 
   const cli = meow(usage, {
     importMeta: import.meta, // This is required
     flags: {
-      // server
       projectTsConfig: {
         type: "string",
         isRequired: true,
       },
-      debug: {
+      debugToConsole: {
         type: "boolean",
         default: false,
       },
@@ -38,10 +37,18 @@ Examples
         type: "number",
         default: 0,
       },
+      codeSizeLimit: {
+        type: "number",
+        default: 0,
+      },
+      externalCodeSizeLimit: {
+        type: "number",
+        default: 0,
+      },
     },
   });
 
-  const { debug, projectTsConfig, declarationNames } = cli.flags;
+  const { debugToConsole, projectTsConfig, declarationNames } = cli.flags;
 
   const projectPath = path.resolve(dirname(projectTsConfig));
 
@@ -52,14 +59,12 @@ Examples
 
   // const debugPath = path.join(projectPath, "debug");
   const debugPath = path.join(__dirname, "..", "..", "debug");
-  const logger = await getLoggerAndSetupDebug(debug, debugPath);
+  const logger = await getLoggerAndSetupDebug(debugToConsole, debugPath);
 
-  // if (debug) {
   if (existsSync(debugPath)) {
     await rm(debugPath, { recursive: true });
   }
   await mkdir(debugPath);
-  // }
 
   const serverState: ServerState = {
     logger,
@@ -77,5 +82,9 @@ Examples
     _event: "getRelatedCode",
     _serverState: serverState,
     declarationIds: declarationNames.split(","),
+    ignoreExternalDeclarations: cli.flags.ignoreExternalDeclarations,
+    maxRecursionLevel: cli.flags.maxRecursionLevel,
+    codeSizeLimit: cli.flags.codeSizeLimit,
+    externalCodeSizeLimit: cli.flags.externalCodeSizeLimit,
   });
 }
