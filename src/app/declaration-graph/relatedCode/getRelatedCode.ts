@@ -13,9 +13,6 @@ import {
 } from "ts-morph";
 import { getSymbolFlagNames } from "./getSymbolFlagNames";
 
-// TODO:
-// - node_modules, recursivity
-
 export async function getRelatedCode(
   _declaration:
     | ClassDeclaration
