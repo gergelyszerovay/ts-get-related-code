@@ -1,4 +1,4 @@
-import { Node, NodeFlags } from "ts-morph";
+import type { Node, NodeFlags } from "ts-morph";
 
 export type RelatedCodeDefinition = {
   identifierName: string;
@@ -30,7 +30,7 @@ export type RelatedCodeDefinition = {
       _definitionCodeNode?: Node;
       // declarationAncestorsCode: string[];
       definitionAncestorsCode: string[];
-      debug?: unknown;
+      debug: unknown | undefined;
     }[];
     parentKindName: string;
   };

@@ -1,3 +1,4 @@
+import { RelatedCodeDefinition } from "@shared/server";
 import finder from "find-package-json";
 import pino from "pino";
 import {
@@ -11,7 +12,6 @@ import {
   ts,
 } from "ts-morph";
 import { getSymbolFlagNames } from "./getSymbolFlagNames";
-import { RelatedCodeDefinition } from "./RelatedCodeDefinition";
 
 // TODO:
 // - node_modules, recursivity

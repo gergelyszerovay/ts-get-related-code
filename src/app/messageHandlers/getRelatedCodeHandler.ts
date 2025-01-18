@@ -1,5 +1,7 @@
+import { RelatedCodeDefinition } from "@shared/server";
+import { GetRelatedCode } from "@shared/server/commands";
 import { writeFile } from "node:fs/promises";
-import path from "node:path";
+import path, { basename } from "node:path";
 import {
   ClassDeclaration,
   EnumDeclaration,
@@ -10,8 +12,6 @@ import {
   VariableDeclaration,
 } from "ts-morph";
 import { getRelatedCode } from "../declaration-graph/relatedCode/getRelatedCode";
-import { RelatedCodeDefinition } from "../declaration-graph/relatedCode/RelatedCodeDefinition";
-import { GetRelatedCode } from "../messageTypes/GetRelatedCode";
 import { writeJsonFile } from "../utils/writeJsonFile";
 
 export async function getRelatedCodeHandler(p: GetRelatedCode) {
@@ -30,10 +30,22 @@ export async function getRelatedCodeHandler(p: GetRelatedCode) {
 
   let relatedCodeDefinitions: RelatedCodeDefinition[] = [];
 
-  for (const declarationName of p.declarationNames) {
+  for (const declarationId of p.declarationIds) {
+    const declarationIdX = declarationId.split("#");
+    let declarationName =
+      declarationIdX.length > 1 ? declarationIdX[1] : declarationIdX[0];
+    let declarationSourceFile =
+      declarationIdX.length > 1 ? declarationIdX[0] : undefined;
+
     const sourceFiles = project.getSourceFiles();
 
     for (const sourceFile of sourceFiles) {
+      if (
+        declarationSourceFile &&
+        basename(sourceFile.getFilePath()) !== declarationSourceFile
+      ) {
+        continue;
+      }
       let declaration:
         | ClassDeclaration
         | TypeAliasDeclaration

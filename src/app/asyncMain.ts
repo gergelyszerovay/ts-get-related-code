@@ -76,6 +76,6 @@ Examples
   getRelatedCodeHandler({
     _event: "getRelatedCode",
     _serverState: serverState,
-    declarationNames: declarationNames.split(","),
+    declarationIds: declarationNames.split(","),
   });
 }

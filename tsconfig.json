@@ -24,9 +24,8 @@
 
     "paths": {
       "@app/messageTypes": ["./src/app/messageTypes/index.ts"],
-      "@shared/UiWorkflowComponentStates": [
-        "../shared/UiWorkflowComponentStates.ts"
-      ]
+      "@shared/server": ["./src/shared/server.ts"],
+      "@shared/server/commands": ["./src/shared/serverCommands.ts"]
     },
 
     "noErrorTruncation": true
