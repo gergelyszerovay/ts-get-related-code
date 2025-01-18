@@ -3,7 +3,7 @@
   "scripts": {
     "start": "pnpm exec tsx watch --tsconfig=./tsconfig.json ./src/main.ts --projectTsConfig=../projects/1/tsconfig.app.json --declarationNames=useTicTacToeGameStore.var.tsx#useTicTacToeGameStore  --maxRecursionLevel=2 | pnpm exec pino-pretty",
     "start2": "pnpm exec tsx watch --tsconfig=./tsconfig.json ./src/main.ts --projectTsConfig=../projects/1/tsconfig.app.json --declarationNames=Board,Player.type.ts#Player --ignoreExternalDeclarations=false | pnpm exec pino-pretty",
-    "log-win": "type .\\debug\\log.ndjson | pnpm exec pino-pretty"
+    "log-win-info": "type .\\debug\\log.ndjson | pnpm exec pino-pretty --minimumLevel=info"
   },
   "dependencies": {
     "@langchain/core": "^0.2.28",

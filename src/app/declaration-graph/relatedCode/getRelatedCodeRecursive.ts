@@ -10,6 +10,7 @@ import {
   TypeAliasDeclaration,
   VariableDeclaration,
 } from "ts-morph";
+import { getReferences } from "./getReferences";
 import { getRelatedCode } from "./getRelatedCode";
 
 export async function getRelatedCodeRecursive(
@@ -72,6 +73,10 @@ export async function getRelatedCodeRecursive(
         }
       }
       if (declaration) {
+        // TODO
+        const references = getReferences(declaration);
+        logger.info(references, `references: ${declarationName}`);
+
         relatedCodeDefinitions = [
           ...relatedCodeDefinitions,
           ...(await getRelatedCode(
@@ -140,6 +145,10 @@ export async function getRelatedCodeRecursive(
     }
   }
 
-  // const references = getReferences(declaration._declaration);
+  return [
+    ...relatedCodeDefinitions.filter((rcd) => !rcd.definitionIsExternal),
+    ...relatedCodeDefinitions.filter((rcd) => rcd.definitionIsExternal),
+  ];
+
   return relatedCodeDefinitions;
 }

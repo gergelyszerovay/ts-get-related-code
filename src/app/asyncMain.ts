@@ -43,7 +43,7 @@ Examples
       },
       externalCodeSizeLimit: {
         type: "number",
-        default: 0,
+        default: 1000,
       },
     },
   });
